@@ -1,0 +1,173 @@
+/* 1. Reset default browser spacing */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* 2. Page styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fb;
+    color: #243047;
+    line-height: 1.6;
+    padding: 30px 16px;
+}
+
+/* 3. Main container */
+.container {
+    max-width: 650px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* 4. Heading */
+h1 {
+    margin-bottom: 8px;
+    color: #243b6b;
+    text-align: center;
+}
+
+.container > p {
+    margin-bottom: 25px;
+    text-align: center;
+    color: #64748b;
+}
+
+/* 5. Task form */
+#todo-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+#todo-input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 6px;
+    background-color: #3157a4;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background-color: #243b6b;
+}
+
+button:focus-visible,
+input:focus-visible {
+    outline: 3px solid #f59e0b;
+    outline-offset: 3px;
+}
+
+/* 6. Task filters */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 25px 0 15px;
+}
+
+.filters .filter {
+    background-color: #e2e8f0;
+    color: #243047;
+}
+
+.filters .filter.active {
+    background-color: #3157a4;
+    color: white;
+}
+
+/* 7. Task list */
+#todo-list {
+    list-style: none;
+}
+
+.todo-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.todo-text {
+    flex: 1;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+
+.todo-item button {
+    flex-shrink: 0;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+}
+
+.delete-btn:hover {
+    background-color: #b91c1c;
+}
+
+/* 8. Remaining-task statistics */
+.stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+#items-left {
+    font-weight: bold;
+}
+
+#clear-completed {
+    background-color: #64748b;
+}
+
+#status-message {
+    margin-top: 12px;
+    color: #166534;
+    font-size: 14px;
+}
+
+/* 9. Small-screen layout */
+@media (max-width: 480px) {
+    .container {
+        margin: 10px auto;
+        padding: 20px 16px;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-group button {
+        width: 100%;
+    }
+}
