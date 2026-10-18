@@ -1,197 +1,226 @@
-// 1. Select the HTML elements
+
 const form = document.getElementById("todo-form");
 const input = document.getElementById("todo-input");
+const formError = document.getElementById("form-error");
 const todoList = document.getElementById("todo-list");
 const itemsLeft = document.getElementById("items-left");
 const filters = document.querySelectorAll(".filter");
 const clearCompletedBtn = document.getElementById("clear-completed");
-const statusMessage = document.getElementById("status-message");
 
-// 2. Application state
 let todos = [];
 let currentFilter = "all";
 let nextId = 1;
+let editingId = null;
 
-// 3. Create a task element
+// STEP 1: Create a task element
 function createTodoElement(todo) {
     const li = document.createElement("li");
-    li.className = "todo-item";
+    li.classList.add("todo-item");
+    li.dataset.id = todo.id;
 
     if (todo.completed) {
         li.classList.add("completed");
     }
 
-    li.dataset.id = todo.id;
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.classList.add("toggle");
+    checkbox.checked = todo.completed;
+    checkbox.setAttribute("aria-label", `Complete "${todo.text}"`);
 
-    const taskText = document.createElement("span");
-    taskText.className = "todo-text";
-    taskText.textContent = todo.text;
-    taskText.tabIndex = 0;
-    taskText.setAttribute("role", "button");
-    taskText.setAttribute(
-        "aria-label",
-        `Mark ${todo.text} ${todo.completed ? "active" : "completed"}`
-    );
+    let taskText;
+
+    if (editingId === todo.id) {
+        taskText = document.createElement("input");
+        taskText.type = "text";
+        taskText.classList.add("edit");
+        taskText.value = todo.text;
+        taskText.setAttribute("aria-label", "Edit task");
+    } else {
+        taskText = document.createElement("span");
+        taskText.classList.add("todo-text");
+        taskText.textContent = todo.text;
+    }
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-    deleteButton.className = "delete-btn";
-    deleteButton.textContent = "Delete";
-    deleteButton.setAttribute("aria-label", `Delete ${todo.text}`);
-    deleteButton.dataset.action = "delete";
+    deleteButton.classList.add("delete");
+    deleteButton.textContent = "✕";
+    deleteButton.setAttribute("aria-label", `Delete "${todo.text}"`);
 
-    li.append(taskText, deleteButton);
-
+    li.append(checkbox, taskText, deleteButton);
     return li;
 }
 
-// 4. Update the remaining-task count
-function updateStats() {
-    const remaining = todos.filter(todo => !todo.completed).length;
+// STEP 1: Filter tasks
+function visibleTodos() {
+    if (currentFilter === "active") {
+        return todos.filter(todo => !todo.completed);
+    }
 
-    itemsLeft.textContent =
-        `${remaining} ${remaining === 1 ? "item" : "items"} left`;
+    if (currentFilter === "completed") {
+        return todos.filter(todo => todo.completed);
+    }
+
+    return todos;
 }
 
-// 5. Display tasks according to the selected filter
-function renderTodos() {
-    todoList.replaceChildren();
-
-    const visibleTodos = todos.filter(todo => {
-        if (currentFilter === "active") {
-            return !todo.completed;
-        }
-
-        if (currentFilter === "completed") {
-            return todo.completed;
-        }
-
-        return true;
-    });
-
-    visibleTodos.forEach(todo => {
-        todoList.appendChild(createTodoElement(todo));
-    });
-
+// STEP 1: Render the page from the array
+function render() {
+    todoList.replaceChildren(...visibleTodos().map(createTodoElement));
     updateStats();
 
     filters.forEach(button => {
-        const isActive = button.dataset.filter === currentFilter;
-
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-pressed", String(isActive));
+        const active = button.dataset.filter === currentFilter;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
     });
+
+    if (editingId !== null) {
+        const editInput = todoList.querySelector(".edit");
+        if (editInput) {
+            editInput.focus();
+            editInput.select();
+        }
+    }
 }
 
-// 6. Add a new task
+// STEP 1: Update remaining count
+function updateStats() {
+    const remaining = todos.filter(todo => !todo.completed).length;
+    itemsLeft.textContent =
+        `${remaining} item${remaining === 1 ? "" : "s"} left`;
+}
+
+// STEP 2: Add a task
 function addTodo(text) {
-    const trimmedText = text.trim();
-
-    if (!trimmedText) {
-        statusMessage.textContent = "Please enter a task first.";
-        input.focus();
-        return;
-    }
-
     todos.push({
         id: nextId++,
-        text: trimmedText,
+        text,
         completed: false
     });
 
     currentFilter = "all";
-    input.value = "";
-    statusMessage.textContent = "Task added successfully.";
-
-    renderTodos();
-    input.focus();
+    render();
 }
 
-// 7. Toggle a task between active and completed
+form.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const text = input.value.trim();
+
+    if (!text) {
+        formError.textContent = "Type a task first.";
+        input.focus();
+        return;
+    }
+
+    formError.textContent = "";
+    addTodo(text);
+    input.value = "";
+    input.focus();
+});
+
+// STEP 3: Toggle and delete tasks
 function toggleTodo(id) {
     const todo = todos.find(item => item.id === id);
-
     if (!todo) return;
 
     todo.completed = !todo.completed;
-
-    statusMessage.textContent = todo.completed
-        ? "Task marked as completed."
-        : "Task marked as active.";
-
-    renderTodos();
+    render();
 }
 
-// 8. Delete a task
 function deleteTodo(id) {
     todos = todos.filter(todo => todo.id !== id);
 
-    statusMessage.textContent = "Task deleted.";
-    renderTodos();
+    if (editingId === id) {
+        editingId = null;
+    }
+
+    render();
 }
 
-// 9. Change the current filter
-function filterTodos(filter) {
-    currentFilter = filter;
-    renderTodos();
-}
+// ONE delegated click listener on the list
+todoList.addEventListener("click", event => {
+    const item = event.target.closest(".todo-item");
+    if (!item) return;
 
-// 10. Handle form submission
-form.addEventListener("submit", function(event) {
-    event.preventDefault();
-    addTodo(input.value);
-});
+    const id = Number(item.dataset.id);
 
-// 11. Use ONE event listener for task clicks
-todoList.addEventListener("click", function(event) {
-    const li = event.target.closest(".todo-item");
-
-    if (!li || !todoList.contains(li)) return;
-
-    const id = Number(li.dataset.id);
-
-    if (event.target.closest('[data-action="delete"]')) {
+    if (event.target.closest(".delete")) {
         deleteTodo(id);
         return;
     }
 
-    if (event.target.closest(".todo-text")) {
+    if (event.target.classList.contains("toggle")) {
         toggleTodo(id);
     }
 });
 
-// Allow keyboard users to complete tasks with Enter or Space
-todoList.addEventListener("keydown", function(event) {
-    if (
-        event.target.classList.contains("todo-text") &&
-        (event.key === "Enter" || event.key === " ")
-    ) {
-        event.preventDefault();
-        toggleTodo(Number(event.target.closest(".todo-item").dataset.id));
-    }
-});
+// STEP 4: Filters
+function filterTodos(filter) {
+    currentFilter = filter;
+    render();
+}
 
-// 12. Handle the filter buttons
 filters.forEach(button => {
-    button.addEventListener("click", function() {
+    button.addEventListener("click", () => {
         filterTodos(button.dataset.filter);
     });
 });
 
-// 13. Remove all completed tasks
-clearCompletedBtn.addEventListener("click", function() {
-    const completedCount = todos.filter(todo => todo.completed).length;
-
+// STEP 4: Clear completed tasks
+function clearCompleted() {
     todos = todos.filter(todo => !todo.completed);
+    render();
+}
 
-    statusMessage.textContent = completedCount
-        ? `${completedCount} completed task(s) cleared.`
-        : "There are no completed tasks to clear.";
+clearCompletedBtn.addEventListener("click", clearCompleted);
 
-    renderTodos();
+// STEP 5: Save or cancel editing
+function saveEdit(id, value) {
+    const todo = todos.find(item => item.id === id);
+
+    if (todo && value.trim()) {
+        todo.text = value.trim();
+    }
+
+    editingId = null;
+    render();
+}
+
+todoList.addEventListener("dblclick", event => {
+    const textElement = event.target.closest(".todo-text");
+    if (!textElement) return;
+
+    const item = textElement.closest(".todo-item");
+    editingId = Number(item.dataset.id);
+    render();
 });
 
-// 14. Start the application
-renderTodos();
+todoList.addEventListener("keydown", event => {
+    if (!event.target.classList.contains("edit")) return;
 
-console.log("To-Do List app is ready!");
+    const item = event.target.closest(".todo-item");
+    const id = Number(item.dataset.id);
+
+    if (event.key === "Enter") {
+        event.preventDefault();
+        saveEdit(id, event.target.value);
+    } else if (event.key === "Escape") {
+        editingId = null;
+        render();
+    }
+});
+
+todoList.addEventListener("focusout", event => {
+    if (!event.target.classList.contains("edit")) return;
+
+    const item = event.target.closest(".todo-item");
+    if (!item || editingId === null) return;
+
+    saveEdit(Number(item.dataset.id), event.target.value);
+});
+
+// Initialize
+render();
